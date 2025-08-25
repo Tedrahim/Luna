@@ -23,13 +23,13 @@ const copyMsg = document.getElementById("copyMsg");
 
 let currentDate = new Date();
 let happyDays = {};
+let badDays = {};
 let boardId = localStorage.getItem("boardId") || "";
 
 // ---------- Board ID ----------
 function generateBoardId() {
   return Math.random().toString(36).substring(2, 10);
 }
-
 function createBoard() {
   boardId = generateBoardId();
   localStorage.setItem("boardId", boardId);
@@ -38,7 +38,6 @@ function createBoard() {
   saveStatus.textContent = "شناسه ساخته شد ✅";
   loadFromFirestore();
 }
-
 createBoardBtn.addEventListener("click", createBoard);
 
 copyLinkBtn.addEventListener("click", () => {
@@ -47,7 +46,7 @@ copyLinkBtn.addEventListener("click", () => {
   copyMsg.textContent = "لینک کپی شد!";
 });
 
-// اگر لینک با ?board= داشته باشه، استفاده کن
+// اگر لینک با ?board= بود
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get("board")) {
   boardId = urlParams.get("board");
@@ -89,31 +88,33 @@ function renderCalendar() {
 
     const key = `${year}-${month + 1}-${day}`;
     if (happyDays[key]) cell.classList.add("is-happy");
+    if (badDays[key]) cell.classList.add("is-bad");
 
-    cell.addEventListener("click", () => toggleHappyDay(key, cell));
+    cell.addEventListener("click", () => toggleDay(key, cell));
     calendarGrid.appendChild(cell);
   }
 }
 
-function toggleHappyDay(key, cell) {
+function toggleDay(key, cell) {
   if (!boardId) return alert("ابتدا شناسه بسازید!");
 
   if (happyDays[key]) {
     delete happyDays[key];
-    cell.classList.remove("is-happy");
+    badDays[key] = true;
+  } else if (badDays[key]) {
+    delete badDays[key];
   } else {
     happyDays[key] = true;
-    cell.classList.add("is-happy");
   }
 
   saveToFirestore();
+  renderCalendar();
 }
 
 prevBtn.addEventListener("click", () => {
   currentDate.setMonth(currentDate.getMonth() - 1);
   renderCalendar();
 });
-
 nextBtn.addEventListener("click", () => {
   currentDate.setMonth(currentDate.getMonth() + 1);
   renderCalendar();
@@ -121,22 +122,25 @@ nextBtn.addEventListener("click", () => {
 
 // ---------- Firestore ----------
 function saveToFirestore() {
-  db.collection("boards").doc(boardId).set({happyDays})
+  db.collection("boards").doc(boardId).set({happyDays, badDays})
     .then(() => saveStatus.textContent = "ذخیره شد ✅")
-    .catch(err => saveStatus.textContent = "خطا در ذخیره ❌");
+    .catch(() => saveStatus.textContent = "خطا در ذخیره ❌");
 }
 
 function loadFromFirestore() {
   if (!boardId) return;
-  db.collection("boards").doc(boardId).get()
-    .then(doc => {
-      if (doc.exists) {
-        happyDays = doc.data().happyDays || {};
-        renderCalendar();
-        saveStatus.textContent = "داده‌ها بارگذاری شدند ✅";
-      }
-    })
-    .catch(err => saveStatus.textContent = "خطا در بارگذاری ❌");
+  db.collection("boards").doc(boardId).onSnapshot(doc => {
+    if (doc.exists) {
+      happyDays = doc.data().happyDays || {};
+      badDays = doc.data().badDays || {};
+      renderCalendar();
+      saveStatus.textContent = "داده‌ها بارگذاری شدند ✅";
+    } else {
+      happyDays = {};
+      badDays = {};
+      renderCalendar();
+    }
+  });
 }
 
 // ---------- Init ----------
