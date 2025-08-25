@@ -1,1 +1,100 @@
-hi
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>حال‌خوب‌نگار — ثبت روزهای خوب</title>
+  <meta name="description" content="یک تقویم ساده برای علامت‌زدن روزهای خوب، با ذخیره‌سازی آنلاین و پایدار.">
+  <style>
+    :root{--bg:#0b1020;--card:#111831;--muted:#9aa4b2;--text:#e6e9ef;--happy:#22c55e;--accent:#60a5fa;--danger:#ef4444}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Inter,Arial,sans-serif;background:linear-gradient(180deg,#0a0f1e,#0e142a);color:var(--text);display:flex;align-items:flex-start;justify-content:center}
+    .container{width:min(1100px,92vw);margin:24px auto}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .brand .logo{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--accent)}
+    .brand h1{margin:0;font-size:1.25rem}
+
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
+    input[type="text"]{background:#0c1226;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:var(--text);padding:10px 12px;min-width:220px}
+    button{background:#1f2a4a;color:var(--text);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 14px;cursor:pointer}
+    button:hover{filter:brightness(1.1)}
+
+    .calendar{margin-top:16px}
+    .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+    .cal-nav h2{margin:0;font-size:1.1rem;font-weight:600}
+    .weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px}
+    .weekdays div{font-size:.85rem;color:var(--muted);text-align:center}
+    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .day{aspect-ratio:1/1;border:1px dashed rgba(255,255,255,.12);border-radius:12px;display:flex;align-items:center;justify-content:center;user-select:none;cursor:pointer}
+    .day .num{font-size:.95rem;color:var(--muted)}
+    .day.is-happy{border-style:solid;border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.12)}
+
+    .legend{display:flex;gap:12px;align-items:center;margin-top:12px;color:var(--muted);font-size:.9rem}
+    .legend .dot{width:10px;height:10px;border-radius:999px;background:var(--happy);display:inline-block;margin-inline:6px}
+    .status{margin-top:10px;font-size:.85rem;color:var(--muted)}
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.85rem}
+
+    @media (max-width:520px){
+      .weekdays div{font-size:.75rem}
+    }
+  </style>
+</head>
+<body>
+  <a href="#calendar" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden">پرش به تقویم</a>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">🙂</div>
+        <h1>حال‌خوب‌نگار</h1>
+      </div>
+    </header>
+
+    <section class="card" id="board">
+      <div class="controls" aria-label="شناسه تخته و اشتراک‌گذاری">
+        <label for="boardId" class="visually-hidden">شناسه</label>
+        <input id="boardId" type="text" placeholder="شناسه‌ی ویژه" readonly>
+        <button id="createBoard" type="button">ساخت شناسه جدید</button>
+        <button id="copyLink" type="button" disabled>کپی لینک اشتراک</button>
+        <span id="copyMsg" class="status" role="status" aria-live="polite"></span>
+      </div>
+
+      <div class="calendar" id="calendar" aria-labelledby="calendar-title">
+        <nav class="cal-nav">
+          <button id="prevMonth" type="button" aria-label="ماه قبل">◀</button>
+          <h2 id="calendar-title">تقویم</h2>
+          <button id="nextMonth" type="button" aria-label="ماه بعد">▶</button>
+        </nav>
+
+        <div class="weekdays" aria-hidden="true">
+          <div>شنبه</div><div>یک‌شنبه</div><div>دوشنبه</div><div>سه‌شنبه</div><div>چهارشنبه</div><div>پنج‌شنبه</div><div>جمعه</div>
+        </div>
+
+        <div id="calendar-grid" class="grid" role="grid" aria-describedby="legend">
+          <!-- روزها با جاوااسکریپت ساخته می‌شوند -->
+        </div>
+
+        <div class="legend" id="legend">
+          <span>راهنما:</span>
+          <span><span class="dot"></span> روز خوب</span>
+          <span>– روی روز کلیک کن تا علامت بخوره.</span>
+        </div>
+        <div class="status" id="saveStatus" role="status" aria-live="polite">وضعیت: آماده.</div>
+      </div>
+    </section>
+
+    <footer>
+      <small>ساخته‌شده برای ثبت لحظه‌های خوب ❤️</small>
+    </footer>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
